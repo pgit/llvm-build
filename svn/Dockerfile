@@ -1,0 +1,58 @@
+# -------------------------------------------------------------------------------------------------
+#
+# Build latest subversion
+#
+# -------------------------------------------------------------------------------------------------
+
+FROM centos:7 as centos-updated
+
+RUN yum update -y && yum clean all
+
+# -------------------------------------------------------------------------------------------------
+
+FROM centos-updated AS builder
+
+RUN yum update -y && \
+    yum install -y sudo unzip git subversion zlib-devel libxml2-devel && \
+    yum install -y centos-release-scl && \
+    yum install -y devtoolset-7-gcc* && \
+    yum install -y rh-python36 && \
+    yum clean all
+
+RUN yum update -y && \
+    yum install -y autoconf libtool make \
+        apr-devel apr-util-devel sqlite-devel sqlite \
+        libsecret-devel sclo-subversion19-libserf-devel openssl-devel \
+        gettext-devel && \
+    yum clean all
+
+#
+# Checkout the source code.
+#
+# RUN svn co https://svn.apache.org/repos/asf/subversion/trunk subversion
+ARG VERSION=1.14.1
+RUN curl -sO https://downloads.apache.org/subversion/subversion-${VERSION}.tar.gz && \
+    tar xzvf subversion-${VERSION}.tar.gz && \
+    mv -T subversion-${VERSION} subversion
+
+RUN scl enable devtoolset-7 bash && \
+    cd subversion && \
+    ./autogen.sh && \    
+    curl -s https://www.sqlite.org/2015/sqlite-amalgamation-3081101.zip -O && \
+    unzip sqlite-amalgamation-3081101.zip && \
+    mv sqlite-amalgamation-3081101 sqlite-amalgamation && \
+    export PKG_CONFIG_PATH=/opt/rh/sclo-subversion19/root/usr/lib64/pkgconfig && \
+    ./configure --with-lz4=internal --with-utf8proc=internal --with-gnome-keyring --with-serf
+
+RUN scl enable devtoolset-7 bash && \
+    cd subversion && \
+    make -j8 && \
+    make install && \
+    make clean
+
+#
+# docker build -t svn:builder -f svn/Dockerfile --target builder svn
+# docker run --rm -it -v "$PWD":/out svn:builder tar -czf /usr/local/out/svn-custom.tar.gz /usr/local
+#
+# -------------------------------------------------------------------------------------------------
+

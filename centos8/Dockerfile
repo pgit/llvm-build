@@ -4,51 +4,52 @@
 #
 # -------------------------------------------------------------------------------------------------
 
-FROM centos:7 as centos-updated
+FROM centos:8 as centos-updated
 
-RUN yum update -y && yum clean all
+RUN dnf update -y && dnf clean all
 
 # -------------------------------------------------------------------------------------------------
 
 FROM centos-updated AS builder
 
-RUN yum update -y \
- && yum install -y sudo git wget unzip subversion zlib-devel libxml2-devel \
- && yum install -y centos-release-scl \
- && yum install -y devtoolset-7-gcc* \
- && yum install -y rh-python36 \
- && yum clean all
-
+RUN dnf update -y && \
+    dnf install -y sudo unzip git subversion zlib-devel libxml2-devel && \
+    dnf group install -y "Development Tools" && \
+    dnf install -y python3 && \
+    dnf clean all
 
 # Install a newer ninja release. It seems the older version in the debian repos
 # randomly crashes when compiling llvm.
-RUN wget "https://github.com/ninja-build/ninja/releases/download/v1.8.2/ninja-linux.zip" && \
-    unzip ninja-linux.zip -d /usr/local/bin && \
-    rm ninja-linux.zip
+COPY ninja-linux.zip ninja-linux.zip
+RUN unzip ninja-linux.zip -d /usr/local/bin 
 
 # Download, verify and install cmake version that can compile clang into /usr/local.
 # (Version in debian8 repos is is too old)
-RUN wget "https://cmake.org/files/v3.20/cmake-3.20.1-linux-x86_64.tar.gz" && \
-    tar xzf cmake-3.20.1-linux-x86_64.tar.gz -C /usr/local --strip-components=1 && \
-    rm cmake-3.20.1-linux-x86_64.tar.gz
+COPY cmake-3.20.1-linux-x86_64.tar.gz cmake-3.20.1-linux-x86_64.tar.gz
+RUN tar xzf cmake-3.20.1-linux-x86_64.tar.gz -C /usr/local --strip-components=1
 
 #
 # Checkout the source code.
 #
 RUN mkdir -p /tmp/clang-build/src && \
     cd /tmp/clang-build/src && \
-    svn checkout https://github.com/llvm/llvm-project/trunk/llvm && \
-    svn checkout https://github.com/llvm/llvm-project/trunk/clang && \
-    svn checkout https://github.com/llvm/llvm-project/trunk/clang-tools-extra
+    git clone https://github.com/llvm/llvm-project.git --no-checkout --depth 1 --branch release/12.x . && \
+    echo llvm >>.git/info/spare-checkout && \
+    echo clang >>.git/info/spare-checkout && \
+    echo clang-tools-extra >>.git/info/spare-checkout && \
+    git checkout && \
+    rm -rf .git
+
+# RUN mkdir -p /tmp/clang-build/src && \
+#     cd /tmp/clang-build/src && \
+#     svn checkout https://github.com/llvm/llvm-project/trunk/llvm && \
+#     svn checkout https://github.com/llvm/llvm-project/trunk/clang && \
+#     svn checkout https://github.com/llvm/llvm-project/trunk/clang-tools-extra
 
 #
 # Finally, build selected LLVM projects
 #
-RUN source scl_source enable devtoolset-7 && \
-    source scl_source enable rh-python36 && \
-    export CXX="/opt/rh/devtoolset-7/root/usr/bin/g++" && \
-    export CC="/opt/rh/devtoolset-7/root/usr/bin/gcc" && \
-    mkdir -p /tmp/clang-install && \
+RUN mkdir -p /tmp/clang-install && \
     mkdir -p /tmp/clang-build/build && \
     cd /tmp/clang-build/build && \
     cmake -GNinja \
@@ -62,8 +63,8 @@ RUN source scl_source enable devtoolset-7 && \
 RUN cp -a /tmp/clang-build/build/bin/clangd-indexer /tmp/clang-install/bin
 
 #
-# docker build -t clang-centos7:builder -f centos7/Dockerfile.online --target builder centos7
-# docker run --rm -it -v "$PWD":/out clang-centos7:builder tar -C /tmp/clang-install --transform 's|^|clangd-custom/|' -czf /out/clangd-12-centos7.tar.gz bin/clangd bin/clangd-indexer lib/clang
+# docker build -t clang-centos8:builder -f centos8/Dockerfile --target builder centos8
+# docker run --rm -it -v "$PWD":/out clang-centos8:builder tar -C /tmp/clang-install --transform 's|^|clangd-custom/|' -czf /out/clangd-12-centos8.tar.gz bin/clangd bin/clangd-indexer lib/clang
 #
 # -------------------------------------------------------------------------------------------------
 
