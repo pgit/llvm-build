@@ -1,6 +1,6 @@
 # -------------------------------------------------------------------------------------------------
 #
-# TEST: build LLVM on CentOS 7 (to force GLIBC 2.17 compatibility)
+# build LLVM clangd on CentOS 7 (to force GLIBC 2.17 compatibility)
 #
 # -------------------------------------------------------------------------------------------------
 
@@ -13,7 +13,7 @@ RUN yum update -y && yum clean all
 FROM centos-updated AS builder
 
 RUN yum update -y && \
-    yum install -y sudo unzip git subversion zlib-devel libxml2-devel && \
+    yum install -y sudo git wget unzip subversion zlib-devel libxml2-devel && \
     yum install -y centos-release-scl && \
     yum install -y devtoolset-7-gcc* && \
     yum install -y rh-python36 && \
@@ -24,7 +24,7 @@ RUN yum update -y && \
 COPY ninja-linux.zip ninja-linux.zip
 RUN unzip ninja-linux.zip -d /usr/local/bin 
 
-# Download, verify and install cmake version that can compile clang into /usr/local.
+# Install cmake version that can compile clang into /usr/local.
 # (Version in debian8 repos is is too old)
 COPY cmake-3.20.1-linux-x86_64.tar.gz cmake-3.20.1-linux-x86_64.tar.gz
 RUN tar xzf cmake-3.20.1-linux-x86_64.tar.gz -C /usr/local --strip-components=1
@@ -34,18 +34,12 @@ RUN tar xzf cmake-3.20.1-linux-x86_64.tar.gz -C /usr/local --strip-components=1
 #
 RUN mkdir -p /tmp/clang-build/src && \
     cd /tmp/clang-build/src && \
-    git clone https://github.com/llvm/llvm-project.git --no-checkout --depth 1 --branch release/12.x . && \
+    git clone https://github.com/llvm/llvm-project.git --no-checkout --depth 1 --branch release/13.x . && \
     echo llvm >>.git/info/spare-checkout && \
     echo clang >>.git/info/spare-checkout && \
     echo clang-tools-extra >>.git/info/spare-checkout && \
     git checkout && \
     rm -rf .git
-
-# RUN mkdir -p /tmp/clang-build/src && \
-#     cd /tmp/clang-build/src && \
-#     svn checkout https://github.com/llvm/llvm-project/trunk/llvm && \
-#     svn checkout https://github.com/llvm/llvm-project/trunk/clang && \
-#     svn checkout https://github.com/llvm/llvm-project/trunk/clang-tools-extra
 
 #
 # Finally, build selected LLVM projects

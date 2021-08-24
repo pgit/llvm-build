@@ -1,6 +1,6 @@
 # -------------------------------------------------------------------------------------------------
 #
-# TEST: build LLVM on CentOS 7 (to force GLIBC 2.17 compatibility)
+# build LLVM clangd on CentOS 7 (to force GLIBC 2.17 compatibility)
 #
 # -------------------------------------------------------------------------------------------------
 
@@ -12,13 +12,12 @@ RUN yum update -y && yum clean all
 
 FROM centos-updated AS builder
 
-RUN yum update -y \
- && yum install -y sudo git wget unzip subversion zlib-devel libxml2-devel \
- && yum install -y centos-release-scl \
- && yum install -y devtoolset-7-gcc* \
- && yum install -y rh-python36 \
- && yum clean all
-
+RUN yum update -y && \
+    yum install -y sudo git wget unzip subversion zlib-devel libxml2-devel && \
+    yum install -y centos-release-scl && \
+    yum install -y devtoolset-7-gcc* && \
+    yum install -y rh-python36 && \
+    yum clean all
 
 # Install a newer ninja release. It seems the older version in the debian repos
 # randomly crashes when compiling llvm.
@@ -40,6 +39,7 @@ RUN mkdir -p /tmp/clang-build/src && \
     svn checkout https://github.com/llvm/llvm-project/trunk/llvm && \
     svn checkout https://github.com/llvm/llvm-project/trunk/clang && \
     svn checkout https://github.com/llvm/llvm-project/trunk/clang-tools-extra
+
 
 #
 # Finally, build selected LLVM projects

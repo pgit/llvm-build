@@ -23,7 +23,7 @@ RUN dnf update -y && \
 COPY ninja-linux.zip ninja-linux.zip
 RUN unzip ninja-linux.zip -d /usr/local/bin 
 
-# Download, verify and install cmake version that can compile clang into /usr/local.
+# Install cmake version that can compile clang into /usr/local.
 # (Version in debian8 repos is is too old)
 COPY cmake-3.20.1-linux-x86_64.tar.gz cmake-3.20.1-linux-x86_64.tar.gz
 RUN tar xzf cmake-3.20.1-linux-x86_64.tar.gz -C /usr/local --strip-components=1
