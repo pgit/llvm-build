@@ -1,6 +1,6 @@
 # -------------------------------------------------------------------------------------------------
 #
-# TEST: build LLVM on CentOS 7 (to force GLIBC 2.17 compatibility)
+# build LLVM clangd on CentOS 8
 #
 # -------------------------------------------------------------------------------------------------
 
@@ -35,20 +35,28 @@ RUN dnf install -y epel-release && \
 RUN git clone https://github.com/facebook/proxygen.git
 
 RUN cd proxygen/proxygen && \
-    ./build.sh && \    
-    ./install.sh
-
-RUN cd proxygen/proxygen && \
+    ./build.sh --prefix /tmp/proxygen-install && \    
     cd _build && \
-    make test
+    make test && \
+    cd .. && \
+    ./install.sh && \
+    rm -rf _build
 
 #
-# docker build -t clang-centos8:builder -f centos8/Dockerfile --target builder centos8
-# docker run --rm -it -v "$PWD":/out clang-centos8:builder tar -C /tmp/clang-install --transform 's|^|clangd-custom/|' -czf /out/clangd-12-centos8.tar.gz bin/clangd bin/clangd-indexer lib/clang
+# docker build -t proxygen:builder -f proxygen.centos8/Dockerfile --target builder proxygen.centos8
 #
 # -------------------------------------------------------------------------------------------------
 
 # Stage 2. Produce a minimal release image with build results.
 FROM centos-updated
 # Copy build results of stage 1 to /usr/local.
-COPY --from=builder /tmp/clang-install/ /usr/local/
+COPY --from=builder /tmp/proxygen-install/ /usr/local/
+
+# Same as above, but without development packages
+RUN dnf install -y epel-release && \
+    dnf install -y dnf-plugins-core && \
+    dnf config-manager --set-enabled powertools && \
+    dnf install -y boost libevent openssl && \
+    dnf install -y double-conversion glog gperf && \
+    dnf install -y libsodium libunwind libdwarf && \
+    dnf install -y libarchive libzstd
