@@ -34,7 +34,7 @@ RUN tar xzf cmake-3.20.1-linux-x86_64.tar.gz -C /usr/local --strip-components=1
 #
 RUN mkdir -p /tmp/clang-build/src && \
     cd /tmp/clang-build/src && \
-    git clone https://github.com/llvm/llvm-project.git --no-checkout --depth 1 --branch release/13.x . && \
+    git clone https://github.com/llvm/llvm-project.git --no-checkout --depth 1 --branch release/12.x . && \
     echo llvm >>.git/info/spare-checkout && \
     echo clang >>.git/info/spare-checkout && \
     echo clang-tools-extra >>.git/info/spare-checkout && \
@@ -59,6 +59,15 @@ RUN source scl_source enable devtoolset-7 && \
       /tmp/clang-build/src/llvm && \
     ninja install
 
+#
+# Patch clangd so that it looks for a file called ".compile_commands.json" (with a '.' in front) as well.
+#
+RUN cd /tmp/clang-build/src && \
+    sed -i clang-tools-extra/clangd/GlobalCompilationDatabase.cpp -e 's/^\(.*\)Build\(CompileCommandsJson.*\)$/&\n\1Dot\2/' && \
+    sed -i clang-tools-extra/clangd/GlobalCompilationDatabase.cpp -e 's/\(DotCompileCommands.*\)"build\//\1"./' && \
+    cd /tmp/clang-build/build && \
+    ninja install
+
 RUN cp -a /tmp/clang-build/build/bin/clangd-indexer /tmp/clang-install/bin
 
 #
@@ -67,7 +76,7 @@ RUN cp -a /tmp/clang-build/build/bin/clangd-indexer /tmp/clang-install/bin
 #
 # -------------------------------------------------------------------------------------------------
 
-# Stage 2. Produce a minimal release image with build results.
+# Stage 2. Produce a minimal release image with build results, omitting the bulding layers:
 FROM centos-updated
 # Copy build results of stage 1 to /usr/local.
 COPY --from=builder /tmp/clang-install/ /usr/local/

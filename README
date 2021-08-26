@@ -1,2 +1,0 @@
-docker build -t clang-centos7:builder --target builder centos7
-docker run --rm -it -v "$PWD":/out clang-centos7:builder tar -C /tmp/clang-install --transform 's|^|clangd-custom/|' -czf /out/clangd-custom.tar.gz bin/clangd include
