@@ -9,13 +9,15 @@ FROM centos:7 as centos-updated
 RUN yum update -y && yum clean all
 
 # -------------------------------------------------------------------------------------------------
-
-FROM centos-updated AS builder
+#
+# docker build -t clang-centos7:devtools -f centos7/Dockerfile --target devtools centos7
+#
+FROM centos-updated AS devtools
 
 RUN yum update -y && \
     yum install -y sudo git wget unzip subversion zlib-devel libxml2-devel && \
     yum install -y centos-release-scl && \
-    yum install -y devtoolset-7-gcc* && \
+    yum install -y devtoolset-10-gcc* && \
     yum install -y rh-python36 && \
     yum clean all
 
@@ -29,12 +31,16 @@ RUN unzip ninja-linux.zip -d /usr/local/bin
 COPY cmake-3.20.1-linux-x86_64.tar.gz cmake-3.20.1-linux-x86_64.tar.gz
 RUN tar xzf cmake-3.20.1-linux-x86_64.tar.gz -C /usr/local --strip-components=1
 
+# -------------------------------------------------------------------------------------------------
+
+FROM devtools AS builder
+
 #
 # Checkout the source code.
 #
 RUN mkdir -p /tmp/clang-build/src && \
     cd /tmp/clang-build/src && \
-    git clone https://github.com/llvm/llvm-project.git --no-checkout --depth 1 --branch release/12.x . && \
+    git clone https://github.com/llvm/llvm-project.git --no-checkout --depth 1 --branch release/13.x . && \
     echo llvm >>.git/info/spare-checkout && \
     echo clang >>.git/info/spare-checkout && \
     echo clang-tools-extra >>.git/info/spare-checkout && \
@@ -44,10 +50,10 @@ RUN mkdir -p /tmp/clang-build/src && \
 #
 # Finally, build selected LLVM projects
 #
-RUN source scl_source enable devtoolset-7 && \
+RUN source scl_source enable devtoolset-10 && \
     source scl_source enable rh-python36 && \
-    export CXX="/opt/rh/devtoolset-7/root/usr/bin/g++" && \
-    export CC="/opt/rh/devtoolset-7/root/usr/bin/gcc" && \
+    export CXX="/opt/rh/devtoolset-10/root/usr/bin/g++" && \
+    export CC="/opt/rh/devtoolset-10/root/usr/bin/gcc" && \
     mkdir -p /tmp/clang-install && \
     mkdir -p /tmp/clang-build/build && \
     cd /tmp/clang-build/build && \
@@ -76,7 +82,7 @@ RUN cp -a /tmp/clang-build/build/bin/clangd-indexer /tmp/clang-install/bin
 #
 # -------------------------------------------------------------------------------------------------
 
-# Stage 2. Produce a minimal release image with build results, omitting the bulding layers:
-FROM centos-updated
-# Copy build results of stage 1 to /usr/local.
+# Stage 3A. Produce a minimal release image with build results, omitting the bulding layers:
+# FROM centos-updated
+FROM devtools
 COPY --from=builder /tmp/clang-install/ /usr/local/

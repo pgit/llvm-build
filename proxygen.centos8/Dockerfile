@@ -1,10 +1,10 @@
 # -------------------------------------------------------------------------------------------------
 #
-# build LLVM clangd on CentOS 8
+# build facebook/proxygen on CentOS 8.4
 #
 # -------------------------------------------------------------------------------------------------
 
-FROM centos:8 as centos-updated
+FROM centos:8.4.2105 as centos-updated
 
 RUN dnf update -y && dnf clean all
 
@@ -27,21 +27,26 @@ RUN dnf install -y epel-release && \
     dnf install -y libarchive libzstd-devel cmake && \
     dnf clean all
 
-# Download, verify and install cmake version that can compile clang into /usr/local.
-# (Version in debian8 repos is is too old)
-# COPY cmake-3.20.1-linux-x86_64.tar.gz cmake-3.20.1-linux-x86_64.tar.gz
-# RUN tar xzf cmake-3.20.1-linux-x86_64.tar.gz -C /usr/local --strip-components=1
+RUN dnf install -y doxygen && dnf clean all
+RUN dnf install -y fmt-devel gtest-devel gmock-devel && dnf clean all
 
-RUN git clone https://github.com/facebook/proxygen.git
+# -------------------------------------------------------------------------------------------------
 
-RUN cd proxygen/proxygen && \
-    ./build.sh --prefix /tmp/proxygen-install && \    
+COPY fizz-v2021.11.01.00.tar.gz fizz-v2021.11.01.00.tar.gz
+COPY folly-v2021.11.01.00.tar.gz folly-v2021.11.01.00.tar.gz
+COPY wangle-v2021.11.01.00.tar.gz wangle-v2021.11.01.00.tar.gz
+COPY proxygen-v2021.11.01.00.tar.gz proxygen-v2021.11.01.00.tar.gz
+
+COPY build-from-archive.sh build-from-archive.sh
+RUN tar xzvf proxygen-v2021.11.01.00.tar.gz && \
+    cd proxygen && \
+    ../build-from-archive.sh --prefix /tmp/proxygen-install
+
+RUN cd proxygen && \
     cd _build && \
     make test && \
     cd .. && \
-    ./install.sh && \
-    rm -rf _build
-
+    ./install.sh
 #
 # docker build -t proxygen:builder -f proxygen.centos8/Dockerfile --target builder proxygen.centos8
 #
@@ -59,4 +64,5 @@ RUN dnf install -y epel-release && \
     dnf install -y boost libevent openssl && \
     dnf install -y double-conversion glog gperf && \
     dnf install -y libsodium libunwind libdwarf && \
-    dnf install -y libarchive libzstd
+    dnf install -y libarchive libzstd && \
+    dnf install -y fmt gtest gmock
