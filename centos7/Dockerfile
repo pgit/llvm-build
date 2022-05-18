@@ -40,7 +40,7 @@ FROM devtools AS builder
 #
 RUN mkdir -p /tmp/clang-build/src && \
     cd /tmp/clang-build/src && \
-    git clone https://github.com/llvm/llvm-project.git --no-checkout --depth 1 --branch release/13.x . && \
+    git clone https://github.com/llvm/llvm-project.git --no-checkout --depth 1 --branch release/14.x . && \
     echo llvm >>.git/info/spare-checkout && \
     echo clang >>.git/info/spare-checkout && \
     echo clang-tools-extra >>.git/info/spare-checkout && \
@@ -78,7 +78,7 @@ RUN cp -a /tmp/clang-build/build/bin/clangd-indexer /tmp/clang-install/bin
 
 #
 # docker build -t clang-centos7:builder -f centos7/Dockerfile --target builder centos7
-# docker run --rm -it -v "$PWD":/out clang-centos7:builder tar -C /tmp/clang-install --transform 's|^|clangd-custom/|' -czf /out/clangd-12-centos7.tar.gz bin/clangd bin/clangd-indexer lib/clang
+# docker run --rm -it -v "$PWD":/out clang-centos7:builder tar -C /tmp/clang-install --transform 's|^|clangd-custom/|' -czf /out/clangd-14-centos7.tar.gz bin/clangd bin/clangd-indexer bin/llvm-symbolizer lib/clang
 #
 # -------------------------------------------------------------------------------------------------
 
