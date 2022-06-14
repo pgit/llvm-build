@@ -23,13 +23,19 @@ RUN yum update -y && \
 
 # Install a newer ninja release. It seems the older version in the debian repos
 # randomly crashes when compiling llvm.
-COPY ninja-linux.zip ninja-linux.zip
-RUN unzip ninja-linux.zip -d /usr/local/bin 
+# COPY ninja-linux.zip ninja-linux.zip
+# RUN unzip ninja-linux.zip -d /usr/local/bin
+RUN wget https://github.com/ninja-build/ninja/releases/download/v1.11.0/ninja-linux.zip && \
+    unzip ninja-linux.zip -d /usr/local/bin && \
+    rm ninja-linux.zip
 
 # Install cmake version that can compile clang into /usr/local.
 # (Version in debian8 repos is is too old)
-COPY cmake-3.20.1-linux-x86_64.tar.gz cmake-3.20.1-linux-x86_64.tar.gz
-RUN tar xzf cmake-3.20.1-linux-x86_64.tar.gz -C /usr/local --strip-components=1
+# COPY cmake-3.20.1-linux-x86_64.tar.gz cmake-3.20.1-linux-x86_64.tar.gz
+# RUN tar xzf cmake-3.20.1-linux-x86_64.tar.gz -C /usr/local --strip-components=1
+RUN wget https://github.com/Kitware/CMake/releases/download/v3.20.1/cmake-3.20.1-linux-x86_64.tar.gz && \
+    tar xzf cmake-3.20.1-linux-x86_64.tar.gz -C /usr/local --strip-components=1 && \
+    rm cmake-3.20.1-linux-x86_64.tar.gz
 
 # -------------------------------------------------------------------------------------------------
 
