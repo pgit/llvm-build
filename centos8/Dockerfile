@@ -33,7 +33,7 @@ RUN tar xzf cmake-3.20.1-linux-x86_64.tar.gz -C /usr/local --strip-components=1
 #
 RUN mkdir -p /tmp/clang-build/src && \
     cd /tmp/clang-build/src && \
-    git clone https://github.com/llvm/llvm-project.git --no-checkout --depth 1 --branch release/14.x . && \
+    git clone https://github.com/llvm/llvm-project.git --no-checkout --depth 1 --branch main . && \
     echo llvm >>.git/info/spare-checkout && \
     echo clang >>.git/info/spare-checkout && \
     echo clang-tools-extra >>.git/info/spare-checkout && \
@@ -67,7 +67,7 @@ RUN cp -a /tmp/clang-build/build/bin/clangd-indexer /tmp/clang-install/bin
 
 #
 # docker build -t clang-centos8:builder -f centos8/Dockerfile --target builder centos8
-# docker run --rm -it -v "$PWD":/out clang-centos8:builder tar -C /tmp/clang-install --transform 's|^|clangd-custom/|' -czf /out/clangd-12-centos8.tar.gz bin/clangd bin/clangd-indexer bin/llvm-symbolizer lib/clang
+# docker run --rm -it -v "$PWD":/out clang-centos8:builder tar -C /tmp/clang-install --transform 's|^|clangd-custom/|' -czf /out/clangd-14-centos8.tar.gz bin/clangd bin/clangd-indexer bin/llvm-symbolizer lib/clang
 #
 # -------------------------------------------------------------------------------------------------
 

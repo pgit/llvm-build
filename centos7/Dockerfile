@@ -40,11 +40,12 @@ FROM devtools AS builder
 #
 RUN mkdir -p /tmp/clang-build/src && \
     cd /tmp/clang-build/src && \
-    git clone https://github.com/llvm/llvm-project.git --no-checkout --depth 1 --branch release/14.x . && \
+    git clone https://github.com/llvm/llvm-project.git --no-checkout --depth 1 --branch main . && \
     echo llvm >>.git/info/spare-checkout && \
     echo clang >>.git/info/spare-checkout && \
     echo clang-tools-extra >>.git/info/spare-checkout && \
     git checkout && \
+    git rev-parse HEAD >git-revision && \
     rm -rf .git
 
 #
